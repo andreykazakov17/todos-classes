@@ -7,7 +7,7 @@ export default class TodoList {
         this.filter = filter;
     }
 
-    filterTodos(items) {
+    filterTodos = (items) => {
         switch (this.filter) {
             case "active":
                 return items.filter((item) => !item.completed);

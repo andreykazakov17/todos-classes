@@ -1,27 +1,10 @@
 import Main from './modules/main';
+import LocalStorage from './services/localStorage';
 
-const todosArr = [
-    {
-        "text": "1",
-        "completed": false,
-        "id": 1647947347955
-    },
-    {
-        "text": "2",
-        "completed": false,
-        "id": 1647947348238
-    },
-    {
-        "text": "3",
-        "completed": false,
-        "id": 1647947348488
-    }
-];
+document.addEventListener('DOMContentLoaded', () => {
 
-//const todosArr = [];
+    const localStorage = new LocalStorage();
 
-
-window.addEventListener('DOMContentLoaded', () => {
     const todos = new Main({
         todoInput: '.todo-input',
         todoButton: '.todo-button',
@@ -31,5 +14,9 @@ window.addEventListener('DOMContentLoaded', () => {
         clearCompletedBtn: '.todo-clear',
         filtersList: '.todo-filters-list'
     });
+
+
+    todos.todosArr = localStorage.getLocalStorage('todosArr') || [];
     todos.render();
+    todos.initHandlers();
 });

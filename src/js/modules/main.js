@@ -1,7 +1,7 @@
 import ToggleIcon from './toggleIcon';
 import TodoList from './todoList';
 import LocalStorage from '../services/localStorage';
-import { createTodo, countTodos, activeFilter } from '../services/utils';
+import { createTodo, activeFilter } from '../services/utils';
 
 export default class Main {
     constructor({
@@ -27,70 +27,141 @@ export default class Main {
 
     }
 
-    onFiltersHandler(e) {
-        this.filter = activeFilter(e);
+    findTodoId = (e) => {
+        const target = e.target;
+        const todo = target.parentElement;
+        return +todo.getAttribute('data-id');
+    }
+
+    addTodo = (inputValue) => {
+        const newTodo = createTodo(inputValue);
+        this.todosArr.push(newTodo);
+    }
+
+    deleteTodo = (id) => {
+        this.todosArr = this.todosArr.filter((item) => item.id !== id);
+    }
+
+    checkTodo = (id) => {
+        return this.todosArr.map((item) => item.id === id ? { ...item, completed: !item.completed } : item);
+    }
+
+    checkAllTodos = (todosArr) => {
+        return todosArr.map((item) => {
+            return {...item, completed: true}
+        });
+    }
+
+    uncheckAllTodos = (todosArr) => {
+        return todosArr.map((item) => {
+            return {...item, completed: false}
+        });
+    }
+
+    toggleAllTodos = () => {
+
+        const { todosArr } = this;
+
+        const everyUnchecked = todosArr.every((item) => !item.completed);
+        const someChecked = todosArr.some((item) => item.completed);
+        const everyChecked = todosArr.every((item) => item.completed);
+
+        if (everyChecked) {
+            this.todosArr = this.uncheckAllTodos(todosArr);
+            return;
+        }
+
+        if (everyUnchecked || someChecked) {
+            this.todosArr = this.checkAllTodos(todosArr);
+            return;
+        }
+    }
+
+    clearCompleted = () => {
+        this.todosArr = this.todosArr.filter((item) => !item.completed);
+    }
+
+    onFiltersHandler = (e) => {
+        this.filter = activeFilter(e, this.filtersList);
         this.render();
     }
 
-    onClickHandler(e) {
+    onClickHandler = (e) => {
+        e.preventDefault();
 
         const { todoInput } = this;
-
-        e.preventDefault();
 
         if (todoInput.value === '') {
             return;
         }
 
-        addTodo(todoInput.value);
+        this.addTodo(todoInput.value);
         todoInput.value = '';
         this.render();
     }
 
-    onDeleteHandler(e) {
-        const id = findTodoId(e);
+    onDeleteHandler = (e) => {
+        const id = this.findTodoId(e);
 
         if (e.target.dataset.trash !== 'trash' &&  e.target.dataset.clear !== 'clear-all') {
             return;
         }
 
-        deleteTodo(id);
-        
+        this.deleteTodo(id);
         this.render();
-        if(this.todosArr.length === 0) {
-            clearLocalStorage('todosArr');
-        }
     }
 
-    onCheckHandler(e) {
-        const id = findTodoId(e);
+    onCheckHandler = (e) => {
+        const id = this.findTodoId(e);
 
         if (!(e.target.dataset.complete === 'complete')) {
             return;
         }
 
-        this.todosArr = checkTodo(id);
+        this.todosArr = this.checkTodo(id);
         this.render();
     }
 
-    handleClear() {
-        clearCompleted();
+    handleClear = (localStorage) => {
+        this.clearCompleted();
         this.render();
-        clearLocalStorage('todosArr');
+        localStorage.clearLocalStorage('todosArr');
     }
 
-    addTodo(inputValue) {
-        const newTodo = createTodo(inputValue);
-        this.todosArr.push(newTodo);
+    initHandlers = () => {
+        const { todoButton, todoList, completeAllBtn, clearCompletedBtn, filtersList } = this;
+        const localStorage = new LocalStorage();
+
+        todoButton.addEventListener('click', this.onClickHandler);
+        todoList.addEventListener('click', this.onDeleteHandler);
+        todoList.addEventListener('click', (e) => {
+            this.onCheckHandler(e);
+            localStorage.setLocalStorage('todosArr', this.todosArr);
+        });
+        completeAllBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.toggleAllTodos();
+            this.render();
+        });
+        clearCompletedBtn.addEventListener('click', () => {
+            this.handleClear(localStorage);
+        });
+        filtersList.addEventListener('click', (e) => {
+            this.onFiltersHandler(e);
+        });
+        todoButton.addEventListener('click', () => {
+            localStorage.setLocalStorage('todosArr', this.todosArr);
+        });
+        window.addEventListener('unload', () => {
+            if (localStorage.getItem('todosArr') === '[]') {
+                localStorage.clearLocalStorage('todosArr');
+            }
+        });
     }
 
+    render = () => {
 
-    render() {
-
-        const { todoInput, todoButton, todoList, completeAllBtn, filterPanel, clearCompletedBtn, filtersList, todosArr, filter } = this;
-
-        console.log('Render!');
-        console.log(this.todosArr);
+        const { todoList, completeAllBtn, filterPanel, todosArr, filter } = this;
 
         const toggleIcon = new ToggleIcon(todosArr, completeAllBtn, filterPanel);
         const todosList = new TodoList(todoList, todosArr, filter);
@@ -99,5 +170,3 @@ export default class Main {
 
     }
 }
-
-todoButton.addEventListener('click', this.onClickHandler);

@@ -96,22 +96,11 @@
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _modules_main__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./modules/main */ "./src/js/modules/main.js");
+/* harmony import */ var _services_localStorage__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./services/localStorage */ "./src/js/services/localStorage.js");
 
-const todosArr = [{
-  "text": "1",
-  "completed": false,
-  "id": 1647947347955
-}, {
-  "text": "2",
-  "completed": false,
-  "id": 1647947348238
-}, {
-  "text": "3",
-  "completed": false,
-  "id": 1647947348488
-}]; //const todosArr = [];
 
-window.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
+  const localStorage = new _services_localStorage__WEBPACK_IMPORTED_MODULE_1__["default"]();
   const todos = new _modules_main__WEBPACK_IMPORTED_MODULE_0__["default"]({
     todoInput: '.todo-input',
     todoButton: '.todo-button',
@@ -121,7 +110,9 @@ window.addEventListener('DOMContentLoaded', () => {
     clearCompletedBtn: '.todo-clear',
     filtersList: '.todo-filters-list'
   });
+  todos.todosArr = localStorage.getLocalStorage('todosArr') || [];
   todos.render();
+  todos.initHandlers();
 });
 
 /***/ }),
@@ -140,6 +131,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _todoList__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./todoList */ "./src/js/modules/todoList.js");
 /* harmony import */ var _services_localStorage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../services/localStorage */ "./src/js/services/localStorage.js");
 /* harmony import */ var _services_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../services/utils */ "./src/js/services/utils.js");
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 
 
 
@@ -147,107 +140,188 @@ __webpack_require__.r(__webpack_exports__);
 class Main {
   constructor() {
     let {
-      todoInput = null,
-      todoButton = null,
-      todoList = null,
-      completeAllBtn = null,
-      filterPanel = null,
-      clearCompletedBtn = null,
-      filtersList = null,
-      todosArr = [],
-      filter = 'all'
+      todoInput: _todoInput = null,
+      todoButton: _todoButton = null,
+      todoList: _todoList = null,
+      completeAllBtn: _completeAllBtn = null,
+      filterPanel: _filterPanel = null,
+      clearCompletedBtn: _clearCompletedBtn = null,
+      filtersList: _filtersList = null,
+      todosArr: _todosArr = [],
+      filter: _filter = 'all'
     } = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-    this.todoInput = document.querySelector(todoInput);
-    this.todoButton = document.querySelector(todoButton);
-    this.todoList = document.querySelector(todoList);
-    this.completeAllBtn = document.querySelector(completeAllBtn);
-    this.filterPanel = document.querySelector(filterPanel);
-    this.clearCompletedBtn = document.querySelector(clearCompletedBtn);
-    this.filtersList = document.querySelector(filtersList);
-    this.todosArr = todosArr;
+
+    _defineProperty(this, "findTodoId", e => {
+      const target = e.target;
+      const todo = target.parentElement;
+      return +todo.getAttribute('data-id');
+    });
+
+    _defineProperty(this, "addTodo", inputValue => {
+      const newTodo = Object(_services_utils__WEBPACK_IMPORTED_MODULE_3__["createTodo"])(inputValue);
+      this.todosArr.push(newTodo);
+    });
+
+    _defineProperty(this, "deleteTodo", id => {
+      this.todosArr = this.todosArr.filter(item => item.id !== id);
+    });
+
+    _defineProperty(this, "checkTodo", id => {
+      return this.todosArr.map(item => item.id === id ? { ...item,
+        completed: !item.completed
+      } : item);
+    });
+
+    _defineProperty(this, "checkAllTodos", todosArr => {
+      return todosArr.map(item => {
+        return { ...item,
+          completed: true
+        };
+      });
+    });
+
+    _defineProperty(this, "uncheckAllTodos", todosArr => {
+      return todosArr.map(item => {
+        return { ...item,
+          completed: false
+        };
+      });
+    });
+
+    _defineProperty(this, "toggleAllTodos", () => {
+      const {
+        todosArr
+      } = this;
+      const everyUnchecked = todosArr.every(item => !item.completed);
+      const someChecked = todosArr.some(item => item.completed);
+      const everyChecked = todosArr.every(item => item.completed);
+
+      if (everyChecked) {
+        this.todosArr = this.uncheckAllTodos(todosArr);
+        return;
+      }
+
+      if (everyUnchecked || someChecked) {
+        this.todosArr = this.checkAllTodos(todosArr);
+        return;
+      }
+    });
+
+    _defineProperty(this, "clearCompleted", () => {
+      this.todosArr = this.todosArr.filter(item => !item.completed);
+    });
+
+    _defineProperty(this, "onFiltersHandler", e => {
+      this.filter = Object(_services_utils__WEBPACK_IMPORTED_MODULE_3__["activeFilter"])(e, this.filtersList);
+      this.render();
+    });
+
+    _defineProperty(this, "onClickHandler", e => {
+      e.preventDefault();
+      const {
+        todoInput
+      } = this;
+
+      if (todoInput.value === '') {
+        return;
+      }
+
+      this.addTodo(todoInput.value);
+      todoInput.value = '';
+      this.render();
+    });
+
+    _defineProperty(this, "onDeleteHandler", e => {
+      const id = this.findTodoId(e);
+
+      if (e.target.dataset.trash !== 'trash' && e.target.dataset.clear !== 'clear-all') {
+        return;
+      }
+
+      this.deleteTodo(id);
+      this.render();
+    });
+
+    _defineProperty(this, "onCheckHandler", e => {
+      const id = this.findTodoId(e);
+
+      if (!(e.target.dataset.complete === 'complete')) {
+        return;
+      }
+
+      this.todosArr = this.checkTodo(id);
+      this.render();
+    });
+
+    _defineProperty(this, "handleClear", localStorage => {
+      this.clearCompleted();
+      this.render();
+      localStorage.clearLocalStorage('todosArr');
+    });
+
+    _defineProperty(this, "initHandlers", () => {
+      const {
+        todoButton,
+        todoList,
+        completeAllBtn,
+        clearCompletedBtn,
+        filtersList
+      } = this;
+      const localStorage = new _services_localStorage__WEBPACK_IMPORTED_MODULE_2__["default"]();
+      todoButton.addEventListener('click', this.onClickHandler);
+      todoList.addEventListener('click', this.onDeleteHandler);
+      todoList.addEventListener('click', e => {
+        this.onCheckHandler(e);
+        localStorage.setLocalStorage('todosArr', this.todosArr);
+      });
+      completeAllBtn.addEventListener('click', e => {
+        e.preventDefault();
+        this.toggleAllTodos();
+        this.render();
+      });
+      clearCompletedBtn.addEventListener('click', () => {
+        this.handleClear(localStorage);
+      });
+      filtersList.addEventListener('click', e => {
+        this.onFiltersHandler(e);
+      });
+      todoButton.addEventListener('click', () => {
+        localStorage.setLocalStorage('todosArr', this.todosArr);
+      });
+      window.addEventListener('unload', () => {
+        if (localStorage.getItem('todosArr') === '[]') {
+          localStorage.clearLocalStorage('todosArr');
+        }
+      });
+    });
+
+    _defineProperty(this, "render", () => {
+      const {
+        todoList,
+        completeAllBtn,
+        filterPanel,
+        todosArr,
+        filter
+      } = this;
+      const toggleIcon = new _toggleIcon__WEBPACK_IMPORTED_MODULE_0__["default"](todosArr, completeAllBtn, filterPanel);
+      const todosList = new _todoList__WEBPACK_IMPORTED_MODULE_1__["default"](todoList, todosArr, filter);
+      toggleIcon.render();
+      todosList.render();
+    });
+
+    this.todoInput = document.querySelector(_todoInput);
+    this.todoButton = document.querySelector(_todoButton);
+    this.todoList = document.querySelector(_todoList);
+    this.completeAllBtn = document.querySelector(_completeAllBtn);
+    this.filterPanel = document.querySelector(_filterPanel);
+    this.clearCompletedBtn = document.querySelector(_clearCompletedBtn);
+    this.filtersList = document.querySelector(_filtersList);
+    this.todosArr = _todosArr;
     this.filterBtns = Object.values(this.filtersList.children);
-    this.filter = filter;
-  }
-
-  onFiltersHandler(e) {
-    this.filter = Object(_services_utils__WEBPACK_IMPORTED_MODULE_3__["activeFilter"])(e);
-    this.render();
-  }
-
-  onClickHandler(e) {
-    const {
-      todoInput
-    } = this;
-    e.preventDefault();
-
-    if (todoInput.value === '') {
-      return;
-    }
-
-    addTodo(todoInput.value);
-    todoInput.value = '';
-    this.render();
-  }
-
-  onDeleteHandler(e) {
-    const id = findTodoId(e);
-
-    if (e.target.dataset.trash !== 'trash' && e.target.dataset.clear !== 'clear-all') {
-      return;
-    }
-
-    deleteTodo(id);
-    this.render();
-
-    if (this.todosArr.length === 0) {
-      clearLocalStorage('todosArr');
-    }
-  }
-
-  onCheckHandler(e) {
-    const id = findTodoId(e);
-
-    if (!(e.target.dataset.complete === 'complete')) {
-      return;
-    }
-
-    this.todosArr = checkTodo(id);
-    this.render();
-  }
-
-  handleClear() {
-    clearCompleted();
-    this.render();
-    clearLocalStorage('todosArr');
-  }
-
-  addTodo(inputValue) {
-    const newTodo = Object(_services_utils__WEBPACK_IMPORTED_MODULE_3__["createTodo"])(inputValue);
-    this.todosArr.push(newTodo);
-  }
-
-  render() {
-    const {
-      todoInput,
-      todoButton,
-      todoList,
-      completeAllBtn,
-      filterPanel,
-      clearCompletedBtn,
-      filtersList,
-      todosArr,
-      filter
-    } = this;
-    console.log('Render!');
-    console.log(this.todosArr);
-    const toggleIcon = new _toggleIcon__WEBPACK_IMPORTED_MODULE_0__["default"](todosArr, completeAllBtn, filterPanel);
-    const todosList = new _todoList__WEBPACK_IMPORTED_MODULE_1__["default"](todoList, todosArr, filter);
-    toggleIcon.render();
-    todosList.render();
+    this.filter = _filter;
   }
 
 }
-todoButton.addEventListener('click', undefined.onClickHandler);
 
 /***/ }),
 
@@ -336,25 +410,27 @@ class TodoItem {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return TodoList; });
 /* harmony import */ var _todoItem__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./todoItem */ "./src/js/modules/todoItem.js");
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 
 class TodoList {
   constructor(todoList, todosArr, filter) {
+    _defineProperty(this, "filterTodos", items => {
+      switch (this.filter) {
+        case "active":
+          return items.filter(item => !item.completed);
+
+        case "completed":
+          return items.filter(item => item.completed);
+
+        default:
+          return items;
+      }
+    });
+
     this.todoList = todoList;
     this.todosArr = todosArr;
     this.filter = filter;
-  }
-
-  filterTodos(items) {
-    switch (this.filter) {
-      case "active":
-        return items.filter(item => !item.completed);
-
-      case "completed":
-        return items.filter(item => item.completed);
-
-      default:
-        return items;
-    }
   }
 
   render() {
@@ -464,14 +540,13 @@ const countTodos = todosArr => {
   return todosArr.length;
 };
 
-const activeFilter = e => {
+const activeFilter = (e, filtersList) => {
   if (e.target.tagName !== 'BUTTON') return;
 
   for (let btn of Object.values(filtersList.children)) {
     btn.classList.remove('active-btn');
   }
 
-  console.log(filter);
   e.target.classList.add('active-btn');
   return e.target.dataset['btn'];
 };
