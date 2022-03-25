@@ -1,14 +1,17 @@
-export default class TodoItem {
-    constructor({id, completed, text}, todoList) {
+import MyEventEmitter from "../services/eventEmitter";
+
+export default class TodoItem extends MyEventEmitter {
+    constructor({id, completed, text}, todoListSelector) {
+        super();
         this.id = id;
         this.completed = completed;
         this.text = text;
-        this.todoList = todoList;
+        this.todoListSelector = todoListSelector;
     }
 
     render() {
 
-        const { id, completed, text, todoList } = this;
+        const { id, completed, text, todoListSelector } = this;
 
         const newTodo = document.createElement('li');
         const textWrapper = document.createElement('div');
@@ -31,7 +34,7 @@ export default class TodoItem {
         textWrapper.appendChild(textInput);
 
         newTodo.appendChild(textWrapper);
-        todoList.appendChild(newTodo);
+        todoListSelector.appendChild(newTodo);
 
         // Check button
         const completedBtn = document.createElement('button');

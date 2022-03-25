@@ -1,15 +1,16 @@
 import { countTodos } from "../services/utils";
+import MyEventEmitter from "../services/eventEmitter";
 
-export default class ToggleIcon {
-    constructor(todosArr, completeAllBtn, filterPanel) {
-        this.todosArr = todosArr;
+export default class Filters extends MyEventEmitter {
+    constructor(completeAllBtn, filterPanel) {
+        super();
         this.completeAllBtn = completeAllBtn;
         this.filterPanel = filterPanel;
     }
 
-    render() {
+    render(todosArr) {
 
-        const { todosArr, completeAllBtn, filterPanel } = this;
+        const { completeAllBtn, filterPanel } = this;
         filterPanel.childNodes[1].innerText = `Total: ${countTodos(todosArr)}`;
 
         if (todosArr.length) {

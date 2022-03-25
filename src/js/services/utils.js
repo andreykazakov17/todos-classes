@@ -18,4 +18,22 @@ const activeFilter = (e, filtersList) => {
     return e.target.dataset['btn'];
 }
 
-export { createTodo, countTodos, activeFilter };
+const filterTodos = (items, filter) => {
+    //console.log(items);
+    switch (filter) {
+        case "active":
+            return items.filter((item) => !item.completed);
+        case "completed":
+            return items.filter((item) => item.completed);
+        default:
+            return items;
+    }
+}
+
+const findTodoId = (e) => {
+    const target = e.target;
+    const todo = target.parentElement;
+    return +todo.getAttribute('data-id');
+}
+
+export { createTodo, countTodos, activeFilter, findTodoId, filterTodos };
