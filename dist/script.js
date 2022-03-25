@@ -333,9 +333,10 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
 
     _defineProperty(this, "handleClear", localStorage => {
       this.todoList.trigger('clearCompleted');
-      console.log(this.filterPanel);
-      this.todoList.currentFilter = 'all';
+      console.log(this.filterPanel); //this.todoList.currentFilter = activeFilter(e, this.filtersBtns);
+
       this.todoList.trigger('render', this.todoList.todosArr, this.todoList.currentFilter);
+      this.completeAllBtn.classList.remove('active-btn');
       localStorage.setLocalStorage('todosArr', this.todoList.todosArr);
     });
 

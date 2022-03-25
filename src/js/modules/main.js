@@ -183,8 +183,9 @@ export default class Controller extends MyEventEmitter {
         this.todoList.trigger('clearCompleted');
 
         console.log(this.filterPanel);
-        this.todoList.currentFilter = 'all';
+        //this.todoList.currentFilter = activeFilter(e, this.filtersBtns);
         this.todoList.trigger('render', this.todoList.todosArr, this.todoList.currentFilter);
+        this.completeAllBtn.classList.remove('active-btn');
         localStorage.setLocalStorage('todosArr', this.todoList.todosArr);
     }
 
