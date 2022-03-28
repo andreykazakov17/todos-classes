@@ -166,10 +166,11 @@ class Filters extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_1__["defau
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Controller; });
 /* harmony import */ var _filters__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./filters */ "./src/js/modules/filters.js");
-/* harmony import */ var _todoItem__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./todoItem */ "./src/js/modules/todoItem.js");
-/* harmony import */ var _services_localStorage__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../services/localStorage */ "./src/js/services/localStorage.js");
-/* harmony import */ var _services_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../services/utils */ "./src/js/services/utils.js");
-/* harmony import */ var _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../services/eventEmitter */ "./src/js/services/eventEmitter.js");
+/* harmony import */ var _todoList__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./todoList */ "./src/js/modules/todoList.js");
+/* harmony import */ var _todoListView__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./todoListView */ "./src/js/modules/todoListView.js");
+/* harmony import */ var _services_localStorage__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../services/localStorage */ "./src/js/services/localStorage.js");
+/* harmony import */ var _services_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../services/utils */ "./src/js/services/utils.js");
+/* harmony import */ var _services_eventEmitter__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../services/eventEmitter */ "./src/js/services/eventEmitter.js");
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 
@@ -178,124 +179,7 @@ function _defineProperty(obj, key, value) { if (key in obj) { Object.definePrope
 
 
 
-class TodoList extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["default"] {
-  constructor(todosArr, filters, currentFilter) {
-    super();
-
-    _defineProperty(this, "addTodo", _ref => {
-      let {
-        text,
-        id
-      } = _ref;
-      const todo = {
-        text,
-        id,
-        completed: false
-      };
-      this.todosArr.push(todo);
-      this.trigger("render", this.todosArr, this.currentFilter);
-    });
-
-    _defineProperty(this, "deleteTodo", id => {
-      this.todosArr = this.todosArr.filter(item => item.id !== id);
-      this.trigger('render', this.todosArr, this.currentFilter);
-    });
-
-    _defineProperty(this, "checkTodo", id => {
-      return this.todosArr.map(item => item.id === id ? { ...item,
-        completed: !item.completed
-      } : item);
-    });
-
-    _defineProperty(this, "checkAllTodos", () => {
-      return this.todosArr.map(item => {
-        return { ...item,
-          completed: true
-        };
-      });
-    });
-
-    _defineProperty(this, "uncheckAllTodos", () => {
-      return this.todosArr.map(item => {
-        return { ...item,
-          completed: false
-        };
-      });
-    });
-
-    _defineProperty(this, "toggleAllTodos", () => {
-      const everyUnchecked = this.todosArr.every(item => !item.completed);
-      const someChecked = this.todosArr.some(item => item.completed);
-      const everyChecked = this.todosArr.every(item => item.completed);
-
-      if (everyChecked) {
-        this.todosArr = this.uncheckAllTodos(this.todosArr);
-        return;
-      }
-
-      if (everyUnchecked || someChecked) {
-        this.todosArr = this.checkAllTodos(this.todosArr);
-        return;
-      }
-    });
-
-    _defineProperty(this, "clearCompleted", () => {
-      this.todosArr = this.todosArr.filter(item => !item.completed);
-    });
-
-    _defineProperty(this, "updateInput", (e, localStorage) => {
-      const target = e.target;
-      if (target.tagName !== 'LI' && target.tagName !== 'DIV') return;
-      const textWrapper = target.parentElement;
-      const textDiv = textWrapper.firstChild;
-      const textInput = textWrapper.lastChild;
-      const valueLength = textInput.value.length;
-      const id = +textWrapper.parentElement.dataset['id'];
-      textDiv.classList.add('hidden');
-      textInput.classList.remove('hidden');
-      textInput.focus();
-      textInput.setSelectionRange(valueLength, valueLength);
-
-      textInput.onchange = () => {
-        if (textInput.value === '') return;
-        this.todosArr = this.todosArr.map(item => item.id === id ? { ...item,
-          text: textInput.value
-        } : item);
-        localStorage.setLocalStorage('todosArr', this.todosArr);
-        this.trigger('render', this.todosArr, this.currentFilter);
-      };
-
-      textInput.onblur = () => {
-        this.trigger('render', this.todosArr, this.currentFilter);
-      };
-    });
-
-    this.todosArr = todosArr;
-    this.filters = filters;
-    this.currentFilter = currentFilter;
-  }
-
-}
-
-class TodoListView extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["default"] {
-  constructor(todoListSelector, _currentFilter) {
-    super();
-
-    _defineProperty(this, "render", (todosArr, currentFilter) => {
-      this.todoListSelector.innerHTML = '';
-      Object(_services_utils__WEBPACK_IMPORTED_MODULE_3__["filterTodos"])(todosArr, currentFilter).forEach(item => {
-        const todoItem = new _todoItem__WEBPACK_IMPORTED_MODULE_1__["default"](item, this.todoListSelector);
-        todoItem.render();
-      });
-    });
-
-    this.currentFilter = _currentFilter;
-    this.todoListSelector = todoListSelector;
-  }
-
-}
-
-class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["default"] {
+class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_5__["default"] {
   constructor() {
     let {
       todoInput: _todoInput = null,
@@ -324,7 +208,7 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
     });
 
     _defineProperty(this, "handleDeleteTodo", e => {
-      const id = Object(_services_utils__WEBPACK_IMPORTED_MODULE_3__["findTodoId"])(e);
+      const id = Object(_services_utils__WEBPACK_IMPORTED_MODULE_4__["findTodoId"])(e);
 
       if (e.target.dataset.trash !== 'trash' && e.target.dataset.clear !== 'clear-all') {
         return;
@@ -334,7 +218,7 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
     });
 
     _defineProperty(this, "handleCheckTodo", e => {
-      const id = Object(_services_utils__WEBPACK_IMPORTED_MODULE_3__["findTodoId"])(e);
+      const id = Object(_services_utils__WEBPACK_IMPORTED_MODULE_4__["findTodoId"])(e);
 
       if (!(e.target.dataset.complete === 'complete')) {
         return;
@@ -345,7 +229,7 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
     });
 
     _defineProperty(this, "handleFiltersTodo", e => {
-      this.todoList.currentFilter = Object(_services_utils__WEBPACK_IMPORTED_MODULE_3__["activeFilter"])(e, this.filtersBtns);
+      this.todoList.currentFilter = Object(_services_utils__WEBPACK_IMPORTED_MODULE_4__["activeFilter"])(e, this.filtersBtns);
       this.todoList.trigger('render', this.todoList.todosArr, this.todoList.currentFilter);
     });
 
@@ -367,7 +251,7 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
     });
 
     _defineProperty(this, "init", () => {
-      const localStorage = new _services_localStorage__WEBPACK_IMPORTED_MODULE_2__["default"]();
+      const localStorage = new _services_localStorage__WEBPACK_IMPORTED_MODULE_3__["default"]();
       this.todoList.todosArr = localStorage.getLocalStorage('todosArr') || [];
       this.todoList.trigger('render', this.todoList.todosArr, this.currentFilter);
       this.filters.trigger('filtersRender', this.todoList.todosArr);
@@ -396,7 +280,7 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
     this.todosArr = todosArr;
     this.currentFilter = currentFilter;
     this.todoListSelector = document.querySelector(todoListSelector);
-    this.todoListView = new TodoListView(this.todoListSelector);
+    this.todoListView = new _todoListView__WEBPACK_IMPORTED_MODULE_2__["default"](this.todoListSelector);
     this.todoInput = document.querySelector(_todoInput);
     this.filtersBtns = document.querySelector(filtersList);
     this.filterPanel = document.querySelector(filterPanel);
@@ -406,14 +290,13 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
     this.filters = new _filters__WEBPACK_IMPORTED_MODULE_0__["default"](this.completeAllBtn, this.filterPanel);
     this.filters.on('filtersRender', todosArr => {
       this.filters.render(todosArr);
-    }); // TodoList init and emit events
-
-    this.todoList = new TodoList(this.todosArr, this.filters, this.currentFilter);
-    this.todoList.on("addTodo", _ref2 => {
+    });
+    this.todoList = new _todoList__WEBPACK_IMPORTED_MODULE_1__["default"](this.todosArr, this.filters, this.currentFilter);
+    this.todoList.on("addTodo", _ref => {
       let {
         text,
         id
-      } = _ref2;
+      } = _ref;
       this.todoList.addTodo({
         text,
         id
@@ -515,6 +398,159 @@ class TodoItem extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_0__["defa
     trashBtn.classList.add('trash-btn');
     trashBtn.setAttribute('data-trash', 'trash');
     newTodo.appendChild(trashBtn);
+  }
+
+}
+
+/***/ }),
+
+/***/ "./src/js/modules/todoList.js":
+/*!************************************!*\
+  !*** ./src/js/modules/todoList.js ***!
+  \************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return TodoList; });
+/* harmony import */ var _services_eventEmitter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../services/eventEmitter */ "./src/js/services/eventEmitter.js");
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+
+class TodoList extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  constructor(todosArr, filters, currentFilter) {
+    super();
+
+    _defineProperty(this, "addTodo", _ref => {
+      let {
+        text,
+        id
+      } = _ref;
+      const todo = {
+        text,
+        id,
+        completed: false
+      };
+      this.todosArr.push(todo);
+      this.trigger("render", this.todosArr, this.currentFilter);
+    });
+
+    _defineProperty(this, "deleteTodo", id => {
+      this.todosArr = this.todosArr.filter(item => item.id !== id);
+      this.trigger('render', this.todosArr, this.currentFilter);
+    });
+
+    _defineProperty(this, "checkTodo", id => {
+      return this.todosArr.map(item => item.id === id ? { ...item,
+        completed: !item.completed
+      } : item);
+    });
+
+    _defineProperty(this, "checkAllTodos", () => {
+      return this.todosArr.map(item => {
+        return { ...item,
+          completed: true
+        };
+      });
+    });
+
+    _defineProperty(this, "uncheckAllTodos", () => {
+      return this.todosArr.map(item => {
+        return { ...item,
+          completed: false
+        };
+      });
+    });
+
+    _defineProperty(this, "toggleAllTodos", () => {
+      const everyUnchecked = this.todosArr.every(item => !item.completed);
+      const someChecked = this.todosArr.some(item => item.completed);
+      const everyChecked = this.todosArr.every(item => item.completed);
+
+      if (everyChecked) {
+        this.todosArr = this.uncheckAllTodos(this.todosArr);
+        return;
+      }
+
+      if (everyUnchecked || someChecked) {
+        this.todosArr = this.checkAllTodos(this.todosArr);
+        return;
+      }
+    });
+
+    _defineProperty(this, "clearCompleted", () => {
+      this.todosArr = this.todosArr.filter(item => !item.completed);
+    });
+
+    _defineProperty(this, "updateInput", (e, localStorage) => {
+      const target = e.target;
+      if (target.tagName !== 'LI' && target.tagName !== 'DIV') return;
+      const textWrapper = target.parentElement;
+      const textDiv = textWrapper.firstChild;
+      const textInput = textWrapper.lastChild;
+      const valueLength = textInput.value.length;
+      const id = +textWrapper.parentElement.dataset['id'];
+      textDiv.classList.add('hidden');
+      textInput.classList.remove('hidden');
+      textInput.focus();
+      textInput.setSelectionRange(valueLength, valueLength);
+
+      textInput.onchange = () => {
+        if (textInput.value === '') return;
+        this.todosArr = this.todosArr.map(item => item.id === id ? { ...item,
+          text: textInput.value
+        } : item);
+        localStorage.setLocalStorage('todosArr', this.todosArr);
+        this.trigger('render', this.todosArr, this.currentFilter);
+      };
+
+      textInput.onblur = () => {
+        this.trigger('render', this.todosArr, this.currentFilter);
+      };
+    });
+
+    this.todosArr = todosArr;
+    this.filters = filters;
+    this.currentFilter = currentFilter;
+  }
+
+}
+
+/***/ }),
+
+/***/ "./src/js/modules/todoListView.js":
+/*!****************************************!*\
+  !*** ./src/js/modules/todoListView.js ***!
+  \****************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return TodoListView; });
+/* harmony import */ var _services_eventEmitter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../services/eventEmitter */ "./src/js/services/eventEmitter.js");
+/* harmony import */ var _todoItem__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./todoItem */ "./src/js/modules/todoItem.js");
+/* harmony import */ var _services_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../services/utils */ "./src/js/services/utils.js");
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+
+
+
+class TodoListView extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  constructor(todoListSelector, _currentFilter) {
+    super();
+
+    _defineProperty(this, "render", (todosArr, currentFilter) => {
+      this.todoListSelector.innerHTML = '';
+      Object(_services_utils__WEBPACK_IMPORTED_MODULE_2__["filterTodos"])(todosArr, currentFilter).forEach(item => {
+        const todoItem = new _todoItem__WEBPACK_IMPORTED_MODULE_1__["default"](item, this.todoListSelector);
+        todoItem.render();
+      });
+    });
+
+    this.currentFilter = _currentFilter;
+    this.todoListSelector = todoListSelector;
   }
 
 }
