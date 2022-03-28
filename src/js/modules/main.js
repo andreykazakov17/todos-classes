@@ -17,14 +17,12 @@ class TodoList extends MyEventEmitter {
         const todo = { text, id, completed: false };
         this.todosArr.push(todo);
         this.trigger("render", this.todosArr, this.currentFilter);
-        this.filters.trigger('init', this.todosArr);
     }
 
     deleteTodo = (id) => {
 
         this.todosArr = this.todosArr.filter((item) => item.id !== id);
         this.trigger('render', this.todosArr, this.currentFilter);
-        this.filters.trigger('init', this.todosArr);
     }
 
     checkTodo = (id) => {
@@ -62,6 +60,38 @@ class TodoList extends MyEventEmitter {
 
     clearCompleted = () => {
         this.todosArr = this.todosArr.filter((item) => !item.completed);
+    }
+
+    updateInput = (e, localStorage) => {
+        const target = e.target;
+    
+        if (target.tagName !== 'LI' && target.tagName !== 'DIV') return;
+    
+        const textWrapper = target.parentElement;
+        const textDiv = textWrapper.firstChild;
+        const textInput = textWrapper.lastChild;
+        const valueLength = textInput.value.length;
+        const id = +textWrapper.parentElement.dataset['id'];
+    
+        textDiv.classList.add('hidden');
+        textInput.classList.remove('hidden');
+        textInput.focus();
+        textInput.setSelectionRange(valueLength, valueLength);
+
+        
+        
+        textInput.onchange = () => {
+    
+            if (textInput.value === '') return;
+    
+            this.todosArr = this.todosArr.map((item) => item.id === id ? { ...item, text: textInput.value } : item);
+            localStorage.setLocalStorage('todosArr', this.todosArr);
+            this.trigger('render', this.todosArr, this.currentFilter);
+        }
+    
+        textInput.onblur = () => {
+            this.trigger('render', this.todosArr, this.currentFilter);
+        }
     }
 }
 
@@ -107,30 +137,34 @@ export default class Controller extends MyEventEmitter {
 
 
         this.filters = new Filters(this.completeAllBtn, this.filterPanel);
-        this.filters.on('init', (todosArr) => {
+        this.filters.on('filtersRender', (todosArr) => {
             this.filters.render(todosArr);
         });
 
         // TodoList init and emit events
         this.todoList = new TodoList(this.todosArr, this.filters, this.currentFilter);
-        this.todoList.on("add", ({ text, id }) => {
+        this.todoList.on("addTodo", ({ text, id }) => {
             this.todoList.addTodo({ text, id });
         });
         this.todoList.on("render", (todosArr, currentFilter) => {
+            this.filters.trigger('filtersRender', todosArr);
             this.todoListView.render(todosArr, currentFilter);
         });
-        this.todoList.on("delete", (id) => {
+        this.todoList.on("deleteTodo", (id) => {
             this.todoList.deleteTodo(id);
         });
-        this.todoList.on('check', (id) => {
+        this.todoList.on('checkTodo', (id) => {
             this.todoList.todosArr = this.todoList.checkTodo(id);
         });
-        this.todoList.on('toggle', () => {
+        this.todoList.on('toggleTodos', () => {
             this.todoList.toggleAllTodos();
         });
         this.todoList.on('clearCompleted', () => {
             this.todoList.clearCompleted();
-        })
+        });
+        this.todoList.on('updateInput', (e, localStorage) => {
+            this.todoList.updateInput(e, localStorage);
+        });
     }
 
     handleAddTodo = (e) => {
@@ -140,7 +174,7 @@ export default class Controller extends MyEventEmitter {
 
         if (todoInput.value === '') return;
 
-        this.todoList.trigger("add", {
+        this.todoList.trigger("addTodo", {
             text: todoInput.value,
             id: new Date().getTime(),
         });
@@ -149,12 +183,11 @@ export default class Controller extends MyEventEmitter {
 
     handleDeleteTodo = (e) => {
         const id = findTodoId(e);
-        console.log(id);
         
         if (e.target.dataset.trash !== 'trash' &&  e.target.dataset.clear !== 'clear-all') {
             return;
         }
-        this.todoList.trigger('delete', id);
+        this.todoList.trigger('deleteTodo', id);
     }
 
     handleCheckTodo = (e) => {
@@ -164,7 +197,7 @@ export default class Controller extends MyEventEmitter {
             return;
         }
         
-        this.todoList.trigger('check', id);
+        this.todoList.trigger('checkTodo', id);
         this.todoList.trigger('render', this.todoList.todosArr, this.todoList.currentFilter);
     }
 
@@ -175,18 +208,19 @@ export default class Controller extends MyEventEmitter {
 
     handleCompleteAll = (e) => {
         e.preventDefault();
-        this.todoList.trigger('toggle');
+        this.todoList.trigger('toggleTodos');
         this.todoList.trigger('render', this.todoList.todosArr, this.todoList.currentFilter);
     }
 
     handleClear = (localStorage) => {
         this.todoList.trigger('clearCompleted');
-
-        console.log(this.filterPanel);
-        //this.todoList.currentFilter = activeFilter(e, this.filtersBtns);
         this.todoList.trigger('render', this.todoList.todosArr, this.todoList.currentFilter);
         this.completeAllBtn.classList.remove('active-btn');
         localStorage.setLocalStorage('todosArr', this.todoList.todosArr);
+    }
+
+    handleUpdateText = (e, localStorage) => {
+        this.todoList.trigger('updateInput', e, localStorage);
     }
 
     init = () => {
@@ -195,7 +229,7 @@ export default class Controller extends MyEventEmitter {
         this.todoList.todosArr = localStorage.getLocalStorage('todosArr') || [];
         this.todoList.trigger('render', this.todoList.todosArr, this.currentFilter);
 
-        this.filters.trigger('init', this.todoList.todosArr);
+        this.filters.trigger('filtersRender', this.todoList.todosArr);
 
         this.todoButton.addEventListener("click", this.handleAddTodo);
         this.todoButton.addEventListener("click", () => {
@@ -214,6 +248,8 @@ export default class Controller extends MyEventEmitter {
         this.clearCompletedBtn.addEventListener('click', () => {
             this.handleClear(localStorage);
         });
-        //this.mount();
+        this.todoListSelector.addEventListener('dblclick', (e) => {
+            this.handleUpdateText(e, localStorage);
+        });
     }
 }

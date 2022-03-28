@@ -194,13 +194,11 @@ class TodoList extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["defa
       };
       this.todosArr.push(todo);
       this.trigger("render", this.todosArr, this.currentFilter);
-      this.filters.trigger('init', this.todosArr);
     });
 
     _defineProperty(this, "deleteTodo", id => {
       this.todosArr = this.todosArr.filter(item => item.id !== id);
       this.trigger('render', this.todosArr, this.currentFilter);
-      this.filters.trigger('init', this.todosArr);
     });
 
     _defineProperty(this, "checkTodo", id => {
@@ -243,6 +241,33 @@ class TodoList extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["defa
 
     _defineProperty(this, "clearCompleted", () => {
       this.todosArr = this.todosArr.filter(item => !item.completed);
+    });
+
+    _defineProperty(this, "updateInput", (e, localStorage) => {
+      const target = e.target;
+      if (target.tagName !== 'LI' && target.tagName !== 'DIV') return;
+      const textWrapper = target.parentElement;
+      const textDiv = textWrapper.firstChild;
+      const textInput = textWrapper.lastChild;
+      const valueLength = textInput.value.length;
+      const id = +textWrapper.parentElement.dataset['id'];
+      textDiv.classList.add('hidden');
+      textInput.classList.remove('hidden');
+      textInput.focus();
+      textInput.setSelectionRange(valueLength, valueLength);
+
+      textInput.onchange = () => {
+        if (textInput.value === '') return;
+        this.todosArr = this.todosArr.map(item => item.id === id ? { ...item,
+          text: textInput.value
+        } : item);
+        localStorage.setLocalStorage('todosArr', this.todosArr);
+        this.trigger('render', this.todosArr, this.currentFilter);
+      };
+
+      textInput.onblur = () => {
+        this.trigger('render', this.todosArr, this.currentFilter);
+      };
     });
 
     this.todosArr = todosArr;
@@ -291,7 +316,7 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
         todoInput
       } = this;
       if (todoInput.value === '') return;
-      this.todoList.trigger("add", {
+      this.todoList.trigger("addTodo", {
         text: todoInput.value,
         id: new Date().getTime()
       });
@@ -300,13 +325,12 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
 
     _defineProperty(this, "handleDeleteTodo", e => {
       const id = Object(_services_utils__WEBPACK_IMPORTED_MODULE_3__["findTodoId"])(e);
-      console.log(id);
 
       if (e.target.dataset.trash !== 'trash' && e.target.dataset.clear !== 'clear-all') {
         return;
       }
 
-      this.todoList.trigger('delete', id);
+      this.todoList.trigger('deleteTodo', id);
     });
 
     _defineProperty(this, "handleCheckTodo", e => {
@@ -316,7 +340,7 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
         return;
       }
 
-      this.todoList.trigger('check', id);
+      this.todoList.trigger('checkTodo', id);
       this.todoList.trigger('render', this.todoList.todosArr, this.todoList.currentFilter);
     });
 
@@ -327,24 +351,26 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
 
     _defineProperty(this, "handleCompleteAll", e => {
       e.preventDefault();
-      this.todoList.trigger('toggle');
+      this.todoList.trigger('toggleTodos');
       this.todoList.trigger('render', this.todoList.todosArr, this.todoList.currentFilter);
     });
 
     _defineProperty(this, "handleClear", localStorage => {
       this.todoList.trigger('clearCompleted');
-      console.log(this.filterPanel); //this.todoList.currentFilter = activeFilter(e, this.filtersBtns);
-
       this.todoList.trigger('render', this.todoList.todosArr, this.todoList.currentFilter);
       this.completeAllBtn.classList.remove('active-btn');
       localStorage.setLocalStorage('todosArr', this.todoList.todosArr);
+    });
+
+    _defineProperty(this, "handleUpdateText", (e, localStorage) => {
+      this.todoList.trigger('updateInput', e, localStorage);
     });
 
     _defineProperty(this, "init", () => {
       const localStorage = new _services_localStorage__WEBPACK_IMPORTED_MODULE_2__["default"]();
       this.todoList.todosArr = localStorage.getLocalStorage('todosArr') || [];
       this.todoList.trigger('render', this.todoList.todosArr, this.currentFilter);
-      this.filters.trigger('init', this.todoList.todosArr);
+      this.filters.trigger('filtersRender', this.todoList.todosArr);
       this.todoButton.addEventListener("click", this.handleAddTodo);
       this.todoButton.addEventListener("click", () => {
         localStorage.setLocalStorage('todosArr', this.todoList.todosArr);
@@ -361,7 +387,10 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
       this.completeAllBtn.addEventListener('click', this.handleCompleteAll);
       this.clearCompletedBtn.addEventListener('click', () => {
         this.handleClear(localStorage);
-      }); //this.mount();
+      });
+      this.todoListSelector.addEventListener('dblclick', e => {
+        this.handleUpdateText(e, localStorage);
+      });
     });
 
     this.todosArr = todosArr;
@@ -375,12 +404,12 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
     this.completeAllBtn = document.querySelector(completeAllBtn);
     this.clearCompletedBtn = document.querySelector(clearCompletedBtn);
     this.filters = new _filters__WEBPACK_IMPORTED_MODULE_0__["default"](this.completeAllBtn, this.filterPanel);
-    this.filters.on('init', todosArr => {
+    this.filters.on('filtersRender', todosArr => {
       this.filters.render(todosArr);
     }); // TodoList init and emit events
 
     this.todoList = new TodoList(this.todosArr, this.filters, this.currentFilter);
-    this.todoList.on("add", _ref2 => {
+    this.todoList.on("addTodo", _ref2 => {
       let {
         text,
         id
@@ -391,19 +420,23 @@ class Controller extends _services_eventEmitter__WEBPACK_IMPORTED_MODULE_4__["de
       });
     });
     this.todoList.on("render", (todosArr, currentFilter) => {
+      this.filters.trigger('filtersRender', todosArr);
       this.todoListView.render(todosArr, currentFilter);
     });
-    this.todoList.on("delete", id => {
+    this.todoList.on("deleteTodo", id => {
       this.todoList.deleteTodo(id);
     });
-    this.todoList.on('check', id => {
+    this.todoList.on('checkTodo', id => {
       this.todoList.todosArr = this.todoList.checkTodo(id);
     });
-    this.todoList.on('toggle', () => {
+    this.todoList.on('toggleTodos', () => {
       this.todoList.toggleAllTodos();
     });
     this.todoList.on('clearCompleted', () => {
       this.todoList.clearCompleted();
+    });
+    this.todoList.on('updateInput', (e, localStorage) => {
+      this.todoList.updateInput(e, localStorage);
     });
   }
 
